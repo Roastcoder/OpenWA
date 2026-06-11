@@ -1,9 +1,9 @@
-FROM node:22-alpine AS builder
+FROM node:23-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files and npm config
+COPY package*.json .npmrc ./
 
 # Install dependencies
 RUN NODE_ENV=development npm ci
