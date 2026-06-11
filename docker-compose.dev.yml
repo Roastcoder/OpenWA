@@ -3,7 +3,7 @@
 
 services:
   # API Backend
-  openwa:
+  openwa-api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -50,7 +50,7 @@ services:
     ports:
       - '127.0.0.1:2886:80'
     depends_on:
-      openwa:
+      openwa-api:
         condition: service_healthy
     restart: unless-stopped
 
