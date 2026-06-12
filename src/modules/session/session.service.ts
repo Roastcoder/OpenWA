@@ -5,6 +5,8 @@ import {
   BadRequestException,
   OnModuleDestroy,
   OnModuleInit,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
@@ -16,6 +18,7 @@ import { createLogger } from '../../common/services/logger.service';
 import { EventsGateway } from '../events/events.gateway';
 import { WebhookService } from '../webhook/webhook.service';
 import { HookManager } from '../../core/hooks';
+import { MessageService } from '../message/message.service';
 
 interface ReconnectState {
   attempts: number;
@@ -43,6 +46,8 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     private readonly eventsGateway: EventsGateway,
     private readonly webhookService: WebhookService,
     private readonly hookManager: HookManager,
+    @Inject(forwardRef(() => MessageService))
+    private readonly messageService: MessageService,
   ) {}
 
   /**
@@ -305,6 +310,29 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
               // Plugin stopped processing (e.g., auto-reply handled it)
               return;
             }
+
+            // Save incoming message to SQLite database
+            const msg = finalMessage as any;
+            void this.messageService
+              .saveIncomingMessage(id, {
+                waMessageId: msg.id,
+                chatId: msg.chatId || msg.from,
+                from: msg.from,
+                to: msg.to,
+                body: msg.body,
+                type: msg.type || 'text',
+                timestamp: msg.timestamp,
+              })
+              .catch(err => {
+                this.logger.error(
+                  `Failed to save incoming message: ${err.message}`,
+                  err.stack,
+                  {
+                    sessionId: id,
+                    messageId: msg.id,
+                  },
+                );
+              });
 
             // Dispatch to webhooks with potentially modified message
             void this.webhookService.dispatch(id, 'message.received', finalMessage as Record<string, unknown>);
