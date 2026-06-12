@@ -16,6 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: openwa-api
+    shm_size: '1gb'
     restart: unless-stopped
     expose:
       - '2785'

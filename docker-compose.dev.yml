@@ -8,6 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: openwa-api
+    shm_size: '1gb'
     ports:
       - '127.0.0.1:2785:2785'
     environment:
