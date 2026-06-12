@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 import * as path from 'path';
+import * as fs from 'fs';
 import {
   IWhatsAppEngine,
   EngineStatus,
@@ -69,6 +70,28 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     this.setStatus(EngineStatus.INITIALIZING);
 
     try {
+      // Clean up stale Chromium Singleton lock files if present (fixes crash when hostname/container changes)
+      const sessionDirName = this.config.sessionId ? `session-${this.config.sessionId}` : 'session';
+      const sessionDir = path.join(path.resolve(this.config.sessionDataPath), sessionDirName);
+      try {
+        if (fs.existsSync(sessionDir)) {
+          const files = fs.readdirSync(sessionDir);
+          for (const file of files) {
+            if (file.includes('Singleton')) {
+              const filePath = path.join(sessionDir, file);
+              try {
+                fs.unlinkSync(filePath);
+                this.logger.log(`Cleaned up stale Chromium singleton file: ${file} for session ${this.config.sessionId}`);
+              } catch (unlinkErr) {
+                this.logger.warn(`Failed to unlink stale Chromium singleton file ${file}: ${String(unlinkErr)}`);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to clean up stale Chromium singleton files in ${sessionDir}: ${String(err)}`);
+      }
+
       // Build puppeteer args, including proxy if configured
       const defaultArgs = [
         '--no-sandbox',
