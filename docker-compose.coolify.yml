@@ -64,6 +64,9 @@ services:
     volumes:
       - openwa-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - coolify
+      - default
     depends_on:
       openwa-postgres:
         condition: service_healthy
@@ -199,5 +202,7 @@ volumes:
     driver: local
 
 networks:
+  coolify:
+    external: true
   default:
     name: openwa-network
