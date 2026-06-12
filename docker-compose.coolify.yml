@@ -68,7 +68,6 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - coolify
-      - default
     depends_on:
       openwa-postgres:
         condition: service_healthy
@@ -111,6 +110,8 @@ services:
       - '80'
     depends_on:
       - openwa-api
+    networks:
+      - coolify
     labels:
       # --- Traefik labels for Coolify's proxy ---
       - 'traefik.enable=true'
@@ -132,6 +133,8 @@ services:
       POSTGRES_DB: ${DATABASE_NAME:-openwa}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - coolify
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_USERNAME:-openwa}']
       interval: 5s
@@ -147,6 +150,8 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
+    networks:
+      - coolify
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -170,6 +175,8 @@ services:
       - '9001'
     volumes:
       - minio-data:/data
+    networks:
+      - coolify
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 10s
@@ -206,5 +213,3 @@ volumes:
 networks:
   coolify:
     external: true
-  default:
-    name: openwa-network
