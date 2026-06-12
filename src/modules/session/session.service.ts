@@ -192,8 +192,22 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
   async start(id: string): Promise<Session> {
     const session = await this.findOne(id);
 
-    if (this.engines.has(id)) {
-      throw new BadRequestException('Session is already started');
+    const existingEngine = this.engines.get(id);
+    if (existingEngine) {
+      if (existingEngine.getStatus() === EngineStatus.FAILED) {
+        this.logger.log(`Cleaning up failed engine for session ${session.name} before starting`, {
+          sessionId: id,
+          action: 'cleanup_failed_engine',
+        });
+        try {
+          await existingEngine.destroy();
+        } catch (err) {
+          this.logger.warn(`Failed to destroy failed engine: ${String(err)}`);
+        }
+        this.engines.delete(id);
+      } else {
+        throw new BadRequestException('Session is already started');
+      }
     }
 
     // Execute hook before starting
@@ -373,8 +387,6 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
         }
       },
     });
-
-    await this.updateStatus(id, SessionStatus.INITIALIZING);
   }
 
   private scheduleReconnect(id: string, session: Session): void {
