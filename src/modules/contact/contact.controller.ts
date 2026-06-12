@@ -24,10 +24,7 @@ export class ContactController {
   })
   @ApiResponse({ status: 400, description: 'Session not ready' })
   @ApiResponse({ status: 404, description: 'Session not found' })
-  async findAll(
-    @Param('sessionId') sessionId: string,
-    @Query('myContacts') myContacts?: string,
-  ) {
+  async findAll(@Param('sessionId') sessionId: string, @Query('myContacts') myContacts?: string) {
     const engine = this.getEngine(sessionId);
     const contacts = await engine.getContacts();
     // If myContacts=true, return only phone book contacts (isMyContact flag)

@@ -21,7 +21,12 @@ export class MessageController {
   @ApiQuery({ name: 'chatId', required: false, description: 'Filter by chat ID' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max messages to return (default 50)' })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Offset for pagination' })
-  @ApiQuery({ name: 'fromWA', required: false, type: Boolean, description: 'Fetch directly from WhatsApp device (default true if chatId is provided)' })
+  @ApiQuery({
+    name: 'fromWA',
+    required: false,
+    type: Boolean,
+    description: 'Fetch directly from WhatsApp device (default true if chatId is provided)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Message history',

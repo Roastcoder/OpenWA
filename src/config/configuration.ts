@@ -82,6 +82,7 @@ export default () => {
     // API configuration
     api: {
       rateLimit: {
+        disabled: process.env.RATE_LIMIT_DISABLED === 'true',
         // Short burst protection: 10 requests per second
         shortTtl: parseInt(process.env.RATE_LIMIT_SHORT_TTL || '1000', 10),
         shortLimit: parseInt(process.env.RATE_LIMIT_SHORT_LIMIT || '10', 10),

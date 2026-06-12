@@ -82,7 +82,9 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
               const filePath = path.join(sessionDir, file);
               try {
                 fs.unlinkSync(filePath);
-                this.logger.log(`Cleaned up stale Chromium singleton file: ${file} for session ${this.config.sessionId}`);
+                this.logger.log(
+                  `Cleaned up stale Chromium singleton file: ${file} for session ${this.config.sessionId}`,
+                );
               } catch (unlinkErr) {
                 this.logger.warn(`Failed to unlink stale Chromium singleton file ${file}: ${String(unlinkErr)}`);
               }

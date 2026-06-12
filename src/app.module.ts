@@ -114,6 +114,7 @@ if (process.env.QUEUE_ENABLED === 'true') {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
+        skipIf: () => configService.get<boolean>('api.rateLimit.disabled', false),
         throttlers: [
           {
             name: 'short',
