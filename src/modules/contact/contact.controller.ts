@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionService } from '../session/session.service';
 
@@ -6,6 +6,14 @@ import { SessionService } from '../session/session.service';
 @Controller('sessions/:sessionId/contacts')
 export class ContactController {
   constructor(private readonly sessionService: SessionService) {}
+
+  private getEngine(sessionId: string) {
+    const engine = this.sessionService.getEngine(sessionId);
+    if (!engine) {
+      throw new NotFoundException('Session is not started');
+    }
+    return engine;
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all contacts for a session' })
@@ -17,10 +25,7 @@ export class ContactController {
   @ApiResponse({ status: 400, description: 'Session not ready' })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async findAll(@Param('sessionId') sessionId: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     return engine.getContacts();
   }
 
@@ -34,13 +39,10 @@ export class ContactController {
   })
   @ApiResponse({ status: 404, description: 'Contact not found' })
   async findOne(@Param('sessionId') sessionId: string, @Param('contactId') contactId: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     const contact = await engine.getContactById(contactId);
     if (!contact) {
-      throw new Error(`Contact ${contactId} not found`);
+      throw new NotFoundException(`Contact ${contactId} not found`);
     }
     return contact;
   }
@@ -54,10 +56,7 @@ export class ContactController {
     description: 'Number existence check result',
   })
   async checkNumber(@Param('sessionId') sessionId: string, @Param('number') number: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     const exists = await engine.checkNumberExists(number);
     return {
       number,
@@ -77,10 +76,7 @@ export class ContactController {
     description: 'Profile picture URL',
   })
   async getProfilePicture(@Param('sessionId') sessionId: string, @Param('contactId') contactId: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     const url = await engine.getProfilePicture(contactId);
     return { url };
   }
@@ -95,10 +91,7 @@ export class ContactController {
     description: 'Contact blocked',
   })
   async blockContact(@Param('sessionId') sessionId: string, @Param('contactId') contactId: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     await engine.blockContact(contactId);
     return { success: true, message: 'Contact blocked' };
   }
@@ -112,10 +105,7 @@ export class ContactController {
     description: 'Contact unblocked',
   })
   async unblockContact(@Param('sessionId') sessionId: string, @Param('contactId') contactId: string) {
-    const engine = this.sessionService.getEngine(sessionId);
-    if (!engine) {
-      throw new Error('Session is not started');
-    }
+    const engine = this.getEngine(sessionId);
     await engine.unblockContact(contactId);
     return { success: true, message: 'Contact unblocked' };
   }
