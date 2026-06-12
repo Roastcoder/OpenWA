@@ -62,6 +62,9 @@ services:
       - PLUGINS_DIR=/app/data/plugins
       # Security
       - API_MASTER_KEY=${API_MASTER_KEY:-}
+      # Default Webhook
+      - DEFAULT_WEBHOOK_URL=${DEFAULT_WEBHOOK_URL:-}
+      - DEFAULT_WEBHOOK_EVENTS=${DEFAULT_WEBHOOK_EVENTS:-}
     volumes:
       - openwa-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -8,6 +8,8 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { Session, SessionStatus } from './entities/session.entity';
@@ -127,6 +129,23 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
       source: 'SessionService',
     });
 
+    // Auto-create default webhook if environment variable is set
+    const defaultWebhookUrl = process.env.DEFAULT_WEBHOOK_URL;
+    if (defaultWebhookUrl) {
+      try {
+        const events = process.env.DEFAULT_WEBHOOK_EVENTS
+          ? process.env.DEFAULT_WEBHOOK_EVENTS.split(',').map(e => e.trim())
+          : ['*'];
+        await this.webhookService.create(saved.id, {
+          url: defaultWebhookUrl,
+          events,
+        });
+        this.logger.log(`Auto-created default webhook for session ${saved.name}: ${defaultWebhookUrl} (events: ${events.join(', ')})`);
+      } catch (err) {
+        this.logger.error(`Failed to auto-create default webhook for session ${saved.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     return saved;
   }
 
@@ -158,11 +177,28 @@ export class SessionService implements OnModuleDestroy, OnModuleInit {
     // Cancel any reconnection attempts
     this.cancelReconnect(id);
 
-    // Stop engine if running
+    // Stop/Logout engine if running
     const engine = this.engines.get(id);
     if (engine) {
-      await engine.destroy();
+      try {
+        await engine.logout();
+      } catch (err) {
+        this.logger.warn(`Failed to logout engine during deletion: ${String(err)}`);
+        await engine.destroy();
+      }
       this.engines.delete(id);
+    }
+
+    // Clean up local session files on disk completely
+    const sessionDataPath = process.env.SESSION_DATA_PATH || './data/sessions';
+    const sessionDir = path.join(path.resolve(sessionDataPath), `session-${session.name}`);
+    try {
+      if (fs.existsSync(sessionDir)) {
+        fs.rmSync(sessionDir, { recursive: true, force: true });
+        this.logger.log(`Cleaned up session directory on delete: ${sessionDir}`);
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to clean up session directory ${sessionDir}: ${String(err)}`);
     }
 
     // Execute hook BEFORE delete so plugins can access session data
