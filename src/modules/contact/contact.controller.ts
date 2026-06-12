@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionService } from '../session/session.service';
 
@@ -24,9 +24,17 @@ export class ContactController {
   })
   @ApiResponse({ status: 400, description: 'Session not ready' })
   @ApiResponse({ status: 404, description: 'Session not found' })
-  async findAll(@Param('sessionId') sessionId: string) {
+  async findAll(
+    @Param('sessionId') sessionId: string,
+    @Query('myContacts') myContacts?: string,
+  ) {
     const engine = this.getEngine(sessionId);
-    return engine.getContacts();
+    const contacts = await engine.getContacts();
+    // If myContacts=true, return only phone book contacts (isMyContact flag)
+    if (myContacts === 'true') {
+      return contacts.filter(c => c.isMyContact);
+    }
+    return contacts;
   }
 
   @Get(':contactId')
