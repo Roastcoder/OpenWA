@@ -157,6 +157,11 @@ services:
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+      # Tell MinIO which URL the browser console is reachable at
+      MINIO_BROWSER_REDIRECT_URL: https://${SERVICE_FQDN_MINIOCONSOLE:-minio-console.example.com}
+    expose:
+      - '9000'
+      - '9001'
     volumes:
       - minio-data:/data
     healthcheck:
@@ -164,6 +169,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      # --- MinIO S3 API (port 9000) ---
+      - 'traefik.http.routers.openwa-minio-api.rule=Host(`${SERVICE_FQDN_MINIOAPI:-minio.example.com}`)'
+      - 'traefik.http.routers.openwa-minio-api.entrypoints=https'
+      - 'traefik.http.routers.openwa-minio-api.tls=true'
+      - 'traefik.http.routers.openwa-minio-api.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.openwa-minio-api.service=openwa-minio-api-svc'
+      - 'traefik.http.services.openwa-minio-api-svc.loadbalancer.server.port=9000'
+      # --- MinIO Web Console (port 9001) ---
+      - 'traefik.http.routers.openwa-minio-console.rule=Host(`${SERVICE_FQDN_MINIOCONSOLE:-minio-console.example.com}`)'
+      - 'traefik.http.routers.openwa-minio-console.entrypoints=https'
+      - 'traefik.http.routers.openwa-minio-console.tls=true'
+      - 'traefik.http.routers.openwa-minio-console.tls.certresolver=letsencrypt'
+      - 'traefik.http.routers.openwa-minio-console.service=openwa-minio-console-svc'
+      - 'traefik.http.services.openwa-minio-console-svc.loadbalancer.server.port=9001'
     profiles: ['minio']
 
 volumes:
