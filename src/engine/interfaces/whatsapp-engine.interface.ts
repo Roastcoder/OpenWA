@@ -53,6 +53,24 @@ export interface Contact {
   profilePicUrl?: string;
 }
 
+export interface Chat {
+  id: string;
+  name: string;
+  isGroup: boolean;
+  unreadCount: number;
+  timestamp: number;
+  pinned: boolean;
+  archived: boolean;
+  isReadOnly: boolean;
+  lastMessage?: {
+    id: string;
+    body: string;
+    type: string;
+    timestamp: number;
+    fromMe: boolean;
+  };
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -240,6 +258,10 @@ export interface IWhatsAppEngine {
   getContacts(): Promise<Contact[]>;
   getContactById(contactId: string): Promise<Contact | null>;
   checkNumberExists(number: string): Promise<boolean>;
+
+  // Chats
+  getChats(): Promise<Chat[]>;
+  getChatMessages(chatId: string, limit?: number): Promise<IncomingMessage[]>;
 
   // Groups - Basic
   getGroups(): Promise<Group[]>;

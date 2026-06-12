@@ -11,6 +11,7 @@ import {
   MediaInput,
   IncomingMessage,
   Contact,
+  Chat,
   Group,
   GroupInfo,
   GroupParticipant,
@@ -386,6 +387,56 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
     this.ensureReady();
     const numberId = await this.client!.getNumberId(number);
     return numberId !== null;
+  }
+
+  async getChats(): Promise<Chat[]> {
+    this.ensureReady();
+    const chats = await this.client!.getChats();
+    return chats.map(c => {
+      let lastMsg = undefined;
+      if (c.lastMessage) {
+        lastMsg = {
+          id: c.lastMessage.id?._serialized || '',
+          body: c.lastMessage.body || '',
+          type: c.lastMessage.type || '',
+          timestamp: c.lastMessage.timestamp,
+          fromMe: !!c.lastMessage.fromMe,
+        };
+      }
+      return {
+        id: c.id._serialized,
+        name: c.name,
+        isGroup: c.isGroup,
+        unreadCount: c.unreadCount || 0,
+        timestamp: c.timestamp || 0,
+        pinned: !!c.pinned,
+        archived: !!c.archived,
+        isReadOnly: !!c.isReadOnly,
+        lastMessage: lastMsg,
+      };
+    });
+  }
+
+  async getChatMessages(chatId: string, limit: number = 50): Promise<IncomingMessage[]> {
+    this.ensureReady();
+    try {
+      const chat = await this.client!.getChatById(chatId);
+      const messages = await chat.fetchMessages({ limit });
+      return messages.map(msg => ({
+        id: msg.id._serialized,
+        from: msg.from,
+        to: msg.to,
+        chatId: msg.from,
+        body: msg.body,
+        type: msg.type,
+        timestamp: msg.timestamp,
+        fromMe: msg.fromMe,
+        isGroup: msg.from.endsWith('@g.us'),
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to fetch chat messages for ${chatId}:`, String(error));
+      return [];
+    }
   }
 
   async getGroups(): Promise<Group[]> {

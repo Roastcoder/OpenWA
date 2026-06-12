@@ -206,6 +206,11 @@ export class MessageService {
     }
   }
 
+  async getChatMessagesFromWA(sessionId: string, chatId: string, limit?: number) {
+    const engine = this.getEngine(sessionId);
+    return engine.getChatMessages(chatId, limit);
+  }
+
   /**
    * Get message history for a session
    */

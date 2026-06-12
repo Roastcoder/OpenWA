@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MessageService } from './message.service';
 import { BulkMessageService } from './bulk-message.service';
 import { MessageController } from './message.controller';
+import { ChatController } from './chat.controller';
 import { SessionModule } from '../session/session.module';
 import { Message } from './entities/message.entity';
 import { MessageBatch } from './entities/message-batch.entity';
@@ -12,7 +13,7 @@ import { MessageBatch } from './entities/message-batch.entity';
     TypeOrmModule.forFeature([Message, MessageBatch], 'data'),
     forwardRef(() => SessionModule),
   ],
-  controllers: [MessageController],
+  controllers: [MessageController, ChatController],
   providers: [MessageService, BulkMessageService],
   exports: [MessageService, BulkMessageService],
 })

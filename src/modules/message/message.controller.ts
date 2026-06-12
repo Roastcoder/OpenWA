@@ -21,6 +21,7 @@ export class MessageController {
   @ApiQuery({ name: 'chatId', required: false, description: 'Filter by chat ID' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max messages to return (default 50)' })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Offset for pagination' })
+  @ApiQuery({ name: 'fromWA', required: false, type: Boolean, description: 'Fetch directly from WhatsApp device (default true if chatId is provided)' })
   @ApiResponse({
     status: 200,
     description: 'Message history',
@@ -30,7 +31,21 @@ export class MessageController {
     @Query('chatId') chatId?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('fromWA') fromWA?: string,
   ) {
+    const shouldFetchFromWA = fromWA !== 'false' && !!chatId;
+    if (shouldFetchFromWA) {
+      try {
+        return await this.messageService.getChatMessagesFromWA(
+          sessionId,
+          chatId,
+          limit ? parseInt(limit, 10) : undefined,
+        );
+      } catch (error) {
+        // Fallback to database
+      }
+    }
+
     return this.messageService.getMessages(sessionId, {
       chatId,
       limit: limit ? parseInt(limit, 10) : undefined,
